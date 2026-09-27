@@ -22,6 +22,16 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    sourcemap: false,
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Some shadcn/Radix source maps point at generated locations that
+        // are not present in the published package. They do not affect the
+        // production bundle, but Vercel surfaces them as build errors.
+        if (warning.code === "SOURCEMAP_ERROR") return;
+        warn(warning);
+      },
+    },
   },
   server: {
     port,
