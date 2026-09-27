@@ -89,7 +89,7 @@ function PropertyModal({ type, onClose }: { type: 'buy' | 'sell'; onClose: () =>
 }
 
 export default function Overview() {
-  const { user, withdrawProfit, isCapitalMatured } = useAuth();
+  const { user, updateUser, isCapitalMatured } = useAuth();
   const { toast } = useToast();
 
   const [greeting, setGreeting]       = useState(getGreeting());
@@ -120,28 +120,21 @@ export default function Overview() {
 
   const dailyProfit = capital * (annualRate / 100 / 365);
 
-  const handleQuickWithdraw = (e: React.FormEvent) => {
+  const handleQuickWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(withdrawAmt);
     if (!amt || amt <= 0) { toast({ title: 'Enter a valid amount', variant: 'destructive' }); return; }
     if (amt > profit) { toast({ title: 'Insufficient profit balance', description: `Available: $${profit.toFixed(2)}`, variant: 'destructive' }); return; }
     setWithdrawing(true);
-    setTimeout(() => {
-      const ok = withdrawProfit(amt);
-      setWithdrawing(false);
-      if (ok) {
+    const response = await fetch('/api/user/withdrawals', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: amt, method: 'crypto', destination: 'Nominated Account' }) });
+    const result = await response.json().catch(() => ({}));
+    setWithdrawing(false);
+    if (response.ok) {
+        if (result.user) updateUser(result.user);
         setWithdrawAmt('');
         toast({ title: 'Withdrawal Submitted', description: `$${amt.toFixed(2)} is being processed. Check your email for confirmation.` });
-      }
-    }, 800);
+    } else toast({ title: 'Withdrawal failed', description: result.error || 'Please try again.', variant: 'destructive' });
   };
-
-  const recentActivities = [
-    { type: 'Credit',     desc: '24h Profit Cycle',         amount: `+$${dailyProfit.toFixed(2)}`, date: '24 hours ago' },
-    { type: 'Credit',     desc: '24h Profit Cycle',         amount: `+$${dailyProfit.toFixed(2)}`, date: '2 days ago'   },
-    { type: 'Investment', desc: `${user?.plan} Allocation`, amount: `$${capital.toLocaleString()}`, date: 'At start'    },
-    { type: 'Deposit',    desc: 'Initial Deposit',          amount: `+$${capital.toLocaleString()}`, date: 'At start'  },
-  ];
 
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
@@ -400,28 +393,7 @@ export default function Overview() {
             <Link href="/dashboard/transactions" className="text-xs font-medium text-primary hover:underline">View All</Link>
           </CardHeader>
           <CardContent>
-            <div className="space-y-5 mt-3">
-              {recentActivities.map((a, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      a.type === 'Credit' || a.type === 'Deposit'
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
-                        : 'bg-secondary text-secondary-foreground'
-                    }`}>
-                      <Activity className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold">{a.desc}</p>
-                      <p className="text-xs text-muted-foreground">{a.date}</p>
-                    </div>
-                  </div>
-                  <span className={`text-sm font-bold ${
-                    a.type === 'Credit' || a.type === 'Deposit' ? 'text-green-500' : 'text-foreground'
-                  }`}>{a.amount}</span>
-                </div>
-              ))}
-            </div>
+             <p className="text-sm text-muted-foreground mt-3">No transactions recorded yet.</p>
           </CardContent>
         </Card>
       </div>

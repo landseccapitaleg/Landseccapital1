@@ -25,7 +25,7 @@ function CountdownBadge({ days }: { days: number }) {
 }
 
 export default function Withdraw() {
-  const { user, withdrawProfit, isCapitalMatured, daysToMaturity } = useAuth();
+  const { user, updateUser, isCapitalMatured, daysToMaturity } = useAuth();
   const { toast } = useToast();
 
   const [profitAmount, setProfitAmount] = useState('');
@@ -33,6 +33,7 @@ export default function Withdraw() {
   const [method, setMethod] = useState<'crypto' | 'bank'>('crypto');
   const [walletAddress, setWalletAddress] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const profit = user?.withdrawableProfit || 0;
   const capital = user?.investedAmount || 0;
@@ -41,7 +42,7 @@ export default function Withdraw() {
   const maturityDate = user?.maturityDate ? new Date(user.maturityDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
   const termLabel = PLAN_TERM_LABELS[user?.plan || ''] || '12 Months';
 
-  const handleProfitWithdraw = (e: React.FormEvent) => {
+  const handleProfitWithdraw = async (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseFloat(profitAmount);
     if (!amt || amt <= 0) { toast({ title: 'Invalid amount', variant: 'destructive' }); return; }
@@ -49,10 +50,16 @@ export default function Withdraw() {
     if (!walletAddress && method === 'crypto') { toast({ title: 'Wallet address required', variant: 'destructive' }); return; }
     if (!destination && method === 'bank') { toast({ title: 'Bank account details required', variant: 'destructive' }); return; }
 
-    const ok = withdrawProfit(amt);
-    if (ok) {
+    setSubmitting(true);
+    const response = await fetch('/api/user/withdrawals', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: amt, method, destination: method === 'crypto' ? walletAddress : destination }) });
+    const result = await response.json().catch(() => ({}));
+    setSubmitting(false);
+    if (response.ok) {
+      if (result.user) updateUser(result.user);
       setSubmitted(true);
       toast({ title: 'Withdrawal Submitted', description: `$${amt.toFixed(2)} is being processed. You will receive a confirmation email shortly.` });
+    } else {
+      toast({ title: 'Withdrawal failed', description: result.error || 'Please try again.', variant: 'destructive' });
     }
   };
 
@@ -212,7 +219,7 @@ export default function Withdraw() {
                 </TabsContent>
               </Tabs>
 
-              <Button type="submit" className="w-full h-11 font-semibold" disabled={!profitAmount || parseFloat(profitAmount) <= 0}>
+               <Button type="submit" className="w-full h-11 font-semibold" disabled={submitting || !profitAmount || parseFloat(profitAmount) <= 0}>
                 <ArrowUpCircle className="w-4 h-4 mr-2" /> Submit Withdrawal Request
               </Button>
             </form>

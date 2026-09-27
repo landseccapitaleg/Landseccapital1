@@ -22,7 +22,7 @@ export default function AdminDeposits() {
 
   const handleApprove = async (id: string) => {
     const dep = deposits.find((d) => d.id === id)!;
-    approveDeposit(id);
+    await approveDeposit(id);
     await sendEmail(dep.userEmail, 'deposit', {
       name: dep.userName,
       amount: dep.amount.toLocaleString(),
@@ -33,8 +33,8 @@ export default function AdminDeposits() {
     toast({ title: 'Deposit Approved', description: `$${dep.amount.toLocaleString()} approved. Notification sent to ${dep.userEmail}.` });
   };
 
-  const handleReject = (id: string) => {
-    rejectDeposit(id);
+  const handleReject = async (id: string) => {
+    await rejectDeposit(id);
     toast({ title: 'Deposit Rejected', description: 'The deposit has been rejected.' });
   };
 

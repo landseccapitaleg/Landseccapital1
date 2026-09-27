@@ -26,7 +26,7 @@ export default function AdminKYC() {
 
   const handleApprove = async (id: string) => {
     const kyc = kycRequests.find((k) => k.id === id)!;
-    approveKYC(id);
+    await approveKYC(id);
     await sendEmail(kyc.userEmail, 'kyc_approved', {
       name: kyc.userName,
       date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
@@ -36,7 +36,7 @@ export default function AdminKYC() {
 
   const handleReject = async (id: string) => {
     const kyc = kycRequests.find((k) => k.id === id)!;
-    rejectKYC(id, rejectReason);
+    await rejectKYC(id, rejectReason);
     await sendEmail(kyc.userEmail, 'kyc_rejected', { name: kyc.userName, reason: rejectReason });
     setRejectingId(null);
     setRejectReason('');

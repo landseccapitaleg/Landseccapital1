@@ -6,17 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { sendEmail } from '@/lib/emailService';
 import { useToast } from '@/hooks/use-toast';
-
-const mockUsers = [
-  { id: 'USR-001', name: 'James Okafor', email: 'james@example.com', plan: 'Foundation Plan', invested: 5000, joined: 'Jun 05, 2026', kyc: 'pending' },
-  { id: 'USR-002', name: 'Sarah Chen', email: 'sarah@example.com', plan: 'Growth Plan', invested: 25000, joined: 'May 12, 2026', kyc: 'approved' },
-  { id: 'USR-003', name: 'Michael Torres', email: 'michael@example.com', plan: 'Foundation Plan', invested: 3500, joined: 'Jun 07, 2026', kyc: 'pending' },
-  { id: 'USR-004', name: 'Emma Williams', email: 'emma@example.com', plan: 'Prestige Plan', invested: 50000, joined: 'Mar 20, 2026', kyc: 'approved' },
-  { id: 'USR-005', name: 'David Park', email: 'david@example.com', plan: 'Heritage Plan', invested: 100000, joined: 'Jan 15, 2026', kyc: 'approved' },
-  { id: 'USR-006', name: 'Maria Santos', email: 'maria@example.com', plan: 'Foundation Plan', invested: 5000, joined: 'Jun 06, 2026', kyc: 'pending' },
-  { id: 'USR-007', name: 'Kofi Mensah', email: 'kofi@example.com', plan: 'Foundation Plan', invested: 5000, joined: 'Jun 07, 2026', kyc: 'pending' },
-  { id: 'USR-008', name: 'Amara Diallo', email: 'amara@example.com', plan: 'Growth Plan', invested: 15000, joined: 'Apr 02, 2026', kyc: 'approved' },
-];
+import { useAdmin, AdminInvestor } from '@/context/AdminContext';
 
 const kycColor: Record<string, string> = {
   pending: 'bg-amber-500/20 text-amber-300',
@@ -27,15 +17,16 @@ const kycColor: Record<string, string> = {
 export default function AdminUsers() {
   const [search, setSearch] = useState('');
   const { toast } = useToast();
+  const { users } = useAdmin();
 
-  const filtered = mockUsers.filter(
+  const filtered = users.filter(
     (u) =>
       u.name.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase()) ||
-      u.plan.toLowerCase().includes(search.toLowerCase())
+       u.plan.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleEmail = async (user: typeof mockUsers[0]) => {
+  const handleEmail = async (user: AdminInvestor) => {
     await sendEmail(user.email, 'custom', {
       name: user.name,
       subject: 'Message from Landsec Capital',
@@ -50,7 +41,7 @@ export default function AdminUsers() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-white">Users</h1>
-          <p className="text-slate-400 text-sm mt-1">{mockUsers.length} registered investors</p>
+       <p className="text-slate-400 text-sm mt-1">{users.length} registered investors</p>
         </div>
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -79,11 +70,11 @@ export default function AdminUsers() {
                   </div>
                   <div>
                     <p className="text-xs text-slate-400">Invested</p>
-                    <p className="text-sm font-semibold text-green-400">${user.invested.toLocaleString()}</p>
+                    <p className="text-sm font-semibold text-green-400">${user.investedAmount.toLocaleString()}</p>
                   </div>
                   <div>
                     <p className="text-xs text-slate-400">KYC</p>
-                    <Badge className={`${kycColor[user.kyc]} text-xs mt-0.5`}>{user.kyc}</Badge>
+                    <Badge className={`${kycColor[user.kycStatus] || kycColor.pending} text-xs mt-0.5`}>{user.kycStatus || 'pending'}</Badge>
                   </div>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">

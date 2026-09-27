@@ -22,21 +22,24 @@ export default function Deposit() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [txHash, setTxHash] = useState('');
   const [amount, setAmount] = useState('');
-  const [status, setStatus] = useState<'pending' | 'review'>('pending');
+  const [status, setStatus] = useState<'pending' | 'review' | 'submitting'>('pending');
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text);
     toast({ title: 'Address copied!', description: 'Wallet address copied to clipboard.' });
   };
 
-  const handleCryptoSubmit = (e: React.FormEvent) => {
+  const handleCryptoSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!txHash || !amount) {
       toast({ title: 'Error', description: 'Please provide transaction hash and amount.', variant: 'destructive' });
       return;
     }
+    setStatus('submitting');
+    const response = await fetch('/api/user/deposits', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: Number(amount), method: activeCrypto.id, txRef: txHash }) });
+    if (!response.ok) { setStatus('pending'); toast({ title: 'Deposit submission failed', description: 'Please try again.', variant: 'destructive' }); return; }
     setStatus('review');
-    toast({ title: 'Deposit Confirmed', description: 'Your funds have been credited to your account.' });
+    toast({ title: 'Deposit Submitted', description: 'Your deposit is pending review.' });
   };
 
   return (
@@ -92,13 +95,13 @@ export default function Deposit() {
                   <CardDescription>Minimum deposit: $100</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {status === 'review' ? (
+                   {status === 'review' || status === 'submitting' ? (
                     <div className="text-center py-12 space-y-4">
                       <div className="w-16 h-16 bg-primary/15 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
                         <CheckCircle2 className="w-8 h-8" />
                       </div>
-                      <h3 className="text-xl font-bold">Deposit Confirmed</h3>
-                      <p className="text-muted-foreground max-w-sm mx-auto">Your funds have been credited to your account automatically. You can now view your updated balance in the Overview.</p>
+                       <h3 className="text-xl font-bold">Deposit Pending</h3>
+                       <p className="text-muted-foreground max-w-sm mx-auto">Your deposit has been submitted and will be reviewed before your balance is updated.</p>
                       <Button variant="outline" onClick={() => { setStatus('pending'); setShowConfirm(false); setTxHash(''); setAmount(''); }}>Make Another Deposit</Button>
                     </div>
                   ) : !showConfirm ? (

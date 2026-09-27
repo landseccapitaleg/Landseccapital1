@@ -22,7 +22,7 @@ export default function AdminWithdrawals() {
 
   const handleApprove = async (id: string) => {
     const wd = withdrawals.find((w) => w.id === id)!;
-    approveWithdrawal(id);
+    await approveWithdrawal(id);
     await sendEmail(wd.userEmail, 'withdrawal_approved', {
       name: wd.userName,
       amount: wd.amount.toLocaleString(),
@@ -34,7 +34,7 @@ export default function AdminWithdrawals() {
 
   const handleReject = async (id: string) => {
     const wd = withdrawals.find((w) => w.id === id)!;
-    rejectWithdrawal(id);
+    await rejectWithdrawal(id);
     toast({ title: 'Withdrawal Rejected', description: `Withdrawal for ${wd.userName} has been rejected.` });
   };
 

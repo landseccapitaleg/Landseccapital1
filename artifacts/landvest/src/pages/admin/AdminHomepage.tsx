@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Globe, Save, CheckCircle2, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,20 +8,36 @@ import { Textarea } from '@/components/ui/textarea';
 import { useAdmin } from '@/context/AdminContext';
 import { useToast } from '@/hooks/use-toast';
 
+type HomepageContent = {
+  heroTitle: string;
+  heroSubtitle: string;
+  heroCta: string;
+  aum: string;
+  investors: string;
+  avgReturn: string;
+  since: string;
+};
+
 export default function AdminHomepage() {
   const { homepageContent, updateHomepageContent } = useAdmin();
   const { toast } = useToast();
-  const [form, setForm] = useState(homepageContent);
+  const [form, setForm] = useState<HomepageContent>(homepageContent);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => setForm(homepageContent), [homepageContent]);
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((prev) => ({ ...prev, [k]: e.target.value }));
 
-  const handleSave = () => {
-    updateHomepageContent(form);
-    setSaved(true);
-    toast({ title: 'Homepage Updated', description: 'Homepage content saved and will reflect on the public site.' });
-    setTimeout(() => setSaved(false), 3000);
+  const handleSave = async () => {
+    try {
+      await updateHomepageContent(form);
+      setSaved(true);
+      toast({ title: 'Homepage Updated', description: 'Homepage content saved and will reflect on the public site.' });
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      toast({ title: 'Unable to save homepage content', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
+    }
   };
 
   return (

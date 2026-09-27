@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -7,30 +7,16 @@ import { Input } from '@/components/ui/input';
 import { Download, Search, Filter } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const mockTransactions = [
-  { id: 'TRX-9821', date: '2026-10-15', desc: 'Q3 Dividend Payment', type: 'Credit', amount: 120.50, status: 'Pending' },
-  { id: 'TRX-9754', date: '2026-09-01', desc: 'Bank Transfer (Barclays)', type: 'Credit', amount: 2000.00, status: 'Completed' },
-  { id: 'TRX-9632', date: '2026-07-15', desc: 'Q2 Dividend Payment', type: 'Credit', amount: 118.20, status: 'Completed' },
-  { id: 'TRX-9510', date: '2026-06-30', desc: 'Plan Upgrade Fee', type: 'Debit', amount: 50.00, status: 'Completed' },
-  { id: 'TRX-9488', date: '2026-04-15', desc: 'Q1 Dividend Payment', type: 'Credit', amount: 115.00, status: 'Completed' },
-  { id: 'TRX-9345', date: '2026-03-01', desc: 'Additional Investment', type: 'Credit', amount: 5000.00, status: 'Completed' },
-  { id: 'TRX-9211', date: '2026-01-15', desc: 'Q4 Dividend Payment', type: 'Credit', amount: 110.00, status: 'Completed' },
-  { id: 'TRX-9105', date: '2025-10-15', desc: 'Q3 Dividend Payment', type: 'Credit', amount: 105.00, status: 'Completed' },
-  { id: 'TRX-9002', date: '2025-07-15', desc: 'Q2 Dividend Payment', type: 'Credit', amount: 100.00, status: 'Completed' },
-  { id: 'TRX-8854', date: '2025-04-15', desc: 'Q1 Dividend Payment', type: 'Credit', amount: 95.00, status: 'Completed' },
-  { id: 'TRX-8722', date: '2025-01-15', desc: 'Q4 Dividend Payment', type: 'Credit', amount: 90.00, status: 'Completed' },
-  { id: 'TRX-8610', date: '2024-10-15', desc: 'Q3 Dividend Payment', type: 'Credit', amount: 85.00, status: 'Completed' },
-  { id: 'TRX-8505', date: '2024-07-15', desc: 'Q2 Dividend Payment', type: 'Credit', amount: 80.00, status: 'Completed' },
-  { id: 'TRX-8401', date: '2024-05-01', desc: 'Account Setup Fee', type: 'Debit', amount: 25.00, status: 'Completed' },
-  { id: 'TRX-8399', date: '2024-05-01', desc: 'Initial Investment', type: 'Credit', amount: 5000.00, status: 'Completed' },
-];
-
 export default function Transactions() {
   const [filter, setFilter] = useState<'All' | 'Credit' | 'Debit'>('All');
   const [search, setSearch] = useState('');
   const { toast } = useToast();
+  const [transactions, setTransactions] = useState<any[]>([]);
+  useEffect(() => {
+    fetch('/api/user/dashboard', { credentials: 'include' }).then(r => r.ok ? r.json() : {}).then((d: any) => setTransactions(d.transactions || [])).catch(() => {});
+  }, []);
 
-  const filteredTransactions = mockTransactions.filter(t => {
+  const filteredTransactions = transactions.map(t => ({ id: t.id, date: t.date || t.createdAt, desc: t.description || t.desc || t.type, type: String(t.type || '').toLowerCase().includes('withdraw') ? 'Debit' : 'Credit', amount: Number(t.amount || 0), status: t.status || 'Pending' })).filter(t => {
     const matchesFilter = filter === 'All' || t.type === filter;
     const matchesSearch = t.desc.toLowerCase().includes(search.toLowerCase()) || t.id.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;

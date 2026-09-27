@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ShieldCheck, Upload, CheckCircle2, Clock, AlertCircle, User, FileText, Camera, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,16 +17,16 @@ const steps: { id: Step; label: string; icon: typeof User }[] = [
   { id: 'selfie', label: 'Selfie Check', icon: Camera },
 ];
 
-function UploadBox({ label, hint, onUpload, uploaded }: { label: string; hint: string; onUpload: () => void; uploaded: boolean }) {
+function UploadBox({ label, hint, onUpload, uploaded }: { label: string; hint: string; onUpload: (file: File) => void; uploaded: boolean }) {
   return (
     <div
-      onClick={onUpload}
       className={`relative border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
         uploaded
           ? 'border-primary bg-primary/5'
           : 'border-border hover:border-primary/50 hover:bg-secondary/30'
       }`}
     >
+      <input type="file" accept="image/*,.pdf" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => { const file = e.target.files?.[0]; if (file) onUpload(file); }} />
       {uploaded ? (
         <div className="space-y-2">
           <CheckCircle2 className="w-10 h-10 text-primary mx-auto" />
@@ -45,8 +45,10 @@ function UploadBox({ label, hint, onUpload, uploaded }: { label: string; hint: s
 
 export default function KYC() {
   const { toast } = useToast();
+  const [kycStatus, setKycStatus] = useState('pending');
   const [currentStep, setCurrentStep] = useState<Step>('personal');
   const [uploads, setUploads] = useState<Record<string, boolean>>({});
+  const [files, setFiles] = useState<Record<string, File>>({});
 
   const [personal, setPersonal] = useState({ dob: '', nationality: '', phone: '' });
   const [idType, setIdType] = useState('');
@@ -54,14 +56,24 @@ export default function KYC() {
   const stepIndex = steps.findIndex((s) => s.id === currentStep);
   const isDone = currentStep === 'done';
 
-  const handleUpload = (key: string) => {
+  useEffect(() => {
+    fetch('/api/user/kyc', { credentials: 'include' }).then(r => r.ok ? r.json() : {}).then((d: any) => setKycStatus(d.kyc?.[0]?.status || 'pending')).catch(() => {});
+  }, []);
+  const handleUpload = (key: string, file: File) => {
+    setFiles((prev) => ({ ...prev, [key]: file }));
     setUploads((prev) => ({ ...prev, [key]: true }));
     toast({ title: 'File received', description: 'Document uploaded successfully.' });
   };
 
-  const goNext = () => {
+  const goNext = async () => {
     const order: Step[] = ['personal', 'identity', 'address', 'selfie', 'done'];
     const idx = order.indexOf(currentStep);
+    if (currentStep === 'selfie') {
+      const response = await fetch('/api/user/kyc', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dob: personal.dob, nationality: personal.nationality, phone: personal.phone, documentType: idType, documents: { idFront: files['id-front']?.name, idBack: files['id-back']?.name || files['id-front']?.name, address: files.address?.name, selfie: files.selfie?.name } }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) { toast({ title: 'Submission failed', description: result.error || 'Please try again.', variant: 'destructive' }); return; }
+      setKycStatus(result.user?.kycStatus || 'pending'); setCurrentStep('done'); return;
+    }
     if (idx < order.length - 1) setCurrentStep(order[idx + 1]);
   };
 
@@ -79,13 +91,13 @@ export default function KYC() {
         <div className="w-20 h-20 rounded-full bg-primary/15 flex items-center justify-center mx-auto">
           <ShieldCheck className="w-10 h-10 text-primary" />
         </div>
-        <h1 className="font-serif text-3xl font-bold">Verification Submitted</h1>
+        <h1 className="font-serif text-3xl font-bold">Verification {kycStatus === 'rejected' ? 'Rejected' : 'Submitted'}</h1>
         <p className="text-muted-foreground text-lg max-w-md mx-auto">
-          Your identity has been verified. Your account is now fully active and you can invest without limits.
+           {kycStatus === 'rejected' ? 'Your submission was rejected. Please review the requirements and resubmit.' : 'Your documents have been submitted and are pending review.'}
         </p>
         <div className="flex items-center justify-center gap-2">
           <Badge className="bg-primary/15 text-primary border-primary/20 px-4 py-1.5 text-sm">
-            <CheckCircle2 className="w-4 h-4 mr-1.5" /> Verified
+             {kycStatus === 'rejected' ? <AlertCircle className="w-4 h-4 mr-1.5" /> : <Clock className="w-4 h-4 mr-1.5" />} {kycStatus === 'rejected' ? 'Rejected' : 'Pending Review'}
           </Badge>
         </div>
         <div className="grid sm:grid-cols-3 gap-4 pt-4 text-left">
@@ -223,13 +235,13 @@ export default function KYC() {
                 <UploadBox
                   label="Front of Document"
                   hint="JPG, PNG or PDF — max 10MB"
-                  onUpload={() => handleUpload('id-front')}
+                   onUpload={(file) => handleUpload('id-front', file)}
                   uploaded={!!uploads['id-front']}
                 />
                 <UploadBox
                   label="Back of Document"
                   hint="Not required for passports"
-                  onUpload={() => handleUpload('id-back')}
+                   onUpload={(file) => handleUpload('id-back', file)}
                   uploaded={!!uploads['id-back']}
                 />
               </div>
@@ -261,7 +273,7 @@ export default function KYC() {
               <UploadBox
                 label="Upload Proof of Address"
                 hint="JPG, PNG or PDF — max 10MB — dated within 3 months"
-                onUpload={() => handleUpload('address')}
+                 onUpload={(file) => handleUpload('address', file)}
                 uploaded={!!uploads['address']}
               />
             </CardContent>
@@ -301,7 +313,7 @@ export default function KYC() {
               <UploadBox
                 label="Upload Selfie Photo"
                 hint="JPG or PNG — max 10MB — clear, well-lit face photo"
-                onUpload={() => handleUpload('selfie')}
+                 onUpload={(file) => handleUpload('selfie', file)}
                 uploaded={!!uploads['selfie']}
               />
             </CardContent>

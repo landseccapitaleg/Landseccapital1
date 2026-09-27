@@ -1,10 +1,10 @@
-import { ArrowDownCircle, ArrowUpCircle, ShieldCheck, Users, TrendingUp, DollarSign, Activity, Clock } from 'lucide-react';
+import { ArrowDownCircle, ArrowUpCircle, ShieldCheck, Users, TrendingUp, DollarSign, Activity } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAdmin } from '@/context/AdminContext';
 
 export default function AdminDashboard() {
-  const { deposits, withdrawals, kycRequests } = useAdmin();
+  const { deposits, withdrawals, kycRequests, users } = useAdmin();
 
   const pending = (arr: { status: string }[]) => arr.filter((x) => x.status === 'pending').length;
   const approved = (arr: { status: string }[]) => arr.filter((x) => x.status === 'approved').length;
@@ -16,26 +16,10 @@ export default function AdminDashboard() {
     { label: 'Pending Deposits', value: pending(deposits), icon: ArrowDownCircle, color: 'text-blue-400', bg: 'bg-blue-500/10', urgent: pending(deposits) > 0 },
     { label: 'Pending Withdrawals', value: pending(withdrawals), icon: ArrowUpCircle, color: 'text-amber-400', bg: 'bg-amber-500/10', urgent: pending(withdrawals) > 0 },
     { label: 'Pending KYC', value: pending(kycRequests), icon: ShieldCheck, color: 'text-purple-400', bg: 'bg-purple-500/10', urgent: pending(kycRequests) > 0 },
-    { label: 'Total Investors', value: 4248, icon: Users, color: 'text-green-400', bg: 'bg-green-500/10', urgent: false },
+    { label: 'Total Investors', value: users.length, icon: Users, color: 'text-green-400', bg: 'bg-green-500/10', urgent: false },
     { label: 'Deposits Approved', value: `$${totalDepositVolume.toLocaleString()}`, icon: DollarSign, color: 'text-green-400', bg: 'bg-green-500/10', urgent: false },
     { label: 'Withdrawals Sent', value: `$${totalWithdrawalVolume.toLocaleString()}`, icon: TrendingUp, color: 'text-blue-400', bg: 'bg-blue-500/10', urgent: false },
   ];
-
-  const recentActivity = [
-    { action: 'New registration', user: 'James Okafor', time: '2 min ago', type: 'info' },
-    { action: 'Deposit submitted', user: 'Sarah Chen — $12,000', time: '8 min ago', type: 'deposit' },
-    { action: 'Withdrawal requested', user: 'David Park — $8,000', time: '34 min ago', type: 'withdrawal' },
-    { action: 'KYC submitted', user: 'Maria Santos', time: '1 hr ago', type: 'kyc' },
-    { action: 'Deposit submitted', user: 'Michael Torres — $3,500', time: '2 hr ago', type: 'deposit' },
-    { action: 'New registration', user: 'Kofi Mensah', time: '3 hr ago', type: 'info' },
-  ];
-
-  const typeColor: Record<string, string> = {
-    info: 'bg-blue-500/20 text-blue-300',
-    deposit: 'bg-green-500/20 text-green-300',
-    withdrawal: 'bg-amber-500/20 text-amber-300',
-    kyc: 'bg-purple-500/20 text-purple-300',
-  };
 
   return (
     <div className="space-y-8">
@@ -69,18 +53,7 @@ export default function AdminDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
-            {recentActivity.map((item, i) => (
-              <div key={i} className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-700/50 last:border-0">
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${typeColor[item.type]}`}>{item.type}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-white truncate">{item.action}</p>
-                  <p className="text-xs text-slate-400 truncate">{item.user}</p>
-                </div>
-                <div className="flex items-center gap-1 text-xs text-slate-500 flex-shrink-0">
-                  <Clock className="w-3 h-3" /> {item.time}
-                </div>
-              </div>
-            ))}
+             <p className="px-5 py-8 text-sm text-slate-500">Activity will appear here as operations are recorded.</p>
           </CardContent>
         </Card>
 
@@ -90,14 +63,14 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent className="p-5 space-y-4">
             {[
-              ['Assets Under Management', '$10.4B'],
-              ['Total Investors', '4,248'],
-              ['Average Annual Return', '9.8%'],
-              ['Operating Since', '2015'],
+              ['Assets Under Management', '—'],
+              ['Total Investors', users.length.toLocaleString()],
+              ['Average Annual Return', '—'],
+              ['Operating Since', '—'],
               ['Plans Available', '4'],
-              ['KYC Completion Rate', '87%'],
-              ['Deposits (This Month)', '$2,845,000'],
-              ['Withdrawals (This Month)', '$342,000'],
+              ['KYC Completion Rate', users.length ? `${Math.round(users.filter(u => u.kycStatus === 'approved').length / users.length * 100)}%` : '—'],
+              ['Deposits (This Month)', `$${totalDepositVolume.toLocaleString()}`],
+              ['Withdrawals (This Month)', `$${totalWithdrawalVolume.toLocaleString()}`],
             ].map(([k, v]) => (
               <div key={k} className="flex justify-between items-center py-1.5 border-b border-slate-700/40 last:border-0">
                 <span className="text-sm text-slate-400">{k}</span>

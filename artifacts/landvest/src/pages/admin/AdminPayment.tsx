@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CreditCard, Save, CheckCircle2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,20 +7,38 @@ import { Label } from '@/components/ui/label';
 import { useAdmin } from '@/context/AdminContext';
 import { useToast } from '@/hooks/use-toast';
 
+type PaymentDetails = {
+  btcAddress: string;
+  ethAddress: string;
+  usdtAddress: string;
+  usdcAddress: string;
+  bankName: string;
+  accountName: string;
+  accountNumber: string;
+  sortCode: string;
+  reference: string;
+};
+
 export default function AdminPayment() {
   const { paymentDetails, updatePaymentDetails } = useAdmin();
   const { toast } = useToast();
-  const [form, setForm] = useState(paymentDetails);
+  const [form, setForm] = useState<PaymentDetails>(paymentDetails);
   const [saved, setSaved] = useState(false);
+
+  useEffect(() => setForm(paymentDetails), [paymentDetails]);
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [k]: e.target.value }));
 
-  const handleSave = () => {
-    updatePaymentDetails(form);
-    setSaved(true);
-    toast({ title: 'Payment Details Updated', description: 'All investor deposit addresses have been updated.' });
-    setTimeout(() => setSaved(false), 3000);
+  const handleSave = async () => {
+    try {
+      await updatePaymentDetails(form);
+      setSaved(true);
+      toast({ title: 'Payment Details Updated', description: 'All investor deposit addresses have been updated.' });
+      setTimeout(() => setSaved(false), 3000);
+    } catch (error) {
+      toast({ title: 'Unable to save payment details', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
+    }
   };
 
   return (
