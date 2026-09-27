@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { sendEmail } from '@/lib/emailService';
+import { useAdmin } from '@/context/AdminContext';
 
 const templates = [
   { value: 'welcome', label: 'Welcome Email' },
@@ -19,16 +20,9 @@ const templates = [
   { value: 'custom', label: 'Custom Message' },
 ];
 
-const mockUsers = [
-  { name: 'James Okafor', email: 'james@example.com' },
-  { name: 'Sarah Chen', email: 'sarah@example.com' },
-  { name: 'Michael Torres', email: 'michael@example.com' },
-  { name: 'Emma Williams', email: 'emma@example.com' },
-  { name: 'David Park', email: 'david@example.com' },
-];
-
 export default function AdminEmail() {
   const { toast } = useToast();
+  const { users } = useAdmin();
   const [to, setTo] = useState('');
   const [subject, setSubject] = useState('');
   const [heading, setHeading] = useState('');
@@ -53,11 +47,11 @@ export default function AdminEmail() {
 
   const handleBroadcast = async () => {
     setSending(true);
-    for (const u of mockUsers) {
+    for (const u of users) {
       await sendEmail(u.email, template, { name: u.name, subject, heading, body });
     }
     setSending(false);
-    toast({ title: 'Broadcast Complete', description: `Email sent to ${mockUsers.length} investors.` });
+    toast({ title: 'Broadcast Complete', description: `Email sent to ${users.length} investors.` });
   };
 
   return (
@@ -105,7 +99,7 @@ export default function AdminEmail() {
                   <SelectValue placeholder="Pick user" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-600">
-                  {mockUsers.map((u) => (
+                  {users.map((u) => (
                     <SelectItem key={u.email} value={u.email} className="text-white hover:bg-slate-700">{u.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -150,23 +144,7 @@ export default function AdminEmail() {
           <CardTitle className="text-white text-base">Email Log</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {[
-            { to: 'james@example.com', type: 'Welcome Email', time: 'Jun 05, 2026 14:23', status: 'delivered' },
-            { to: 'sarah@example.com', type: 'Deposit Confirmation', time: 'Jun 06, 2026 09:11', status: 'delivered' },
-            { to: 'emma@example.com', type: 'Withdrawal Approved', time: 'Jun 04, 2026 16:45', status: 'delivered' },
-            { to: 'kofi@example.com', type: 'Welcome Email', time: 'Jun 07, 2026 08:30', status: 'delivered' },
-          ].map((log, i) => (
-            <div key={i} className="flex items-center justify-between px-5 py-3.5 border-b border-slate-700/50 last:border-0">
-              <div>
-                <p className="text-sm text-white">{log.type}</p>
-                <p className="text-xs text-slate-400">{log.to}</p>
-              </div>
-              <div className="text-right">
-                <span className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full">{log.status}</span>
-                <p className="text-xs text-slate-500 mt-1">{log.time}</p>
-              </div>
-            </div>
-          ))}
+            <p className="px-5 py-8 text-sm text-slate-500">Sent email history will appear here once email events are persisted.</p>
         </CardContent>
       </Card>
     </div>
