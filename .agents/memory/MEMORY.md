@@ -1,0 +1,1 @@
+- [GitHub push connection](github-push-connection.md) — after switching repositories, Replit may sync origin even when direct HTTPS pushes reject the local credential.
