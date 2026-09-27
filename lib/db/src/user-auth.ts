@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { eq } from "drizzle-orm";
-import { db } from "./index";
+import { db, ensureDatabase } from "./index";
 import { usersTable, type UserRecord } from "./schema";
 
 export const USER_COOKIE_NAME = "landsec_user_session";
@@ -70,11 +70,13 @@ export function clearUserSessionCookie(res: any) {
 }
 
 export async function findUserByEmail(email: string) {
+  await ensureDatabase();
   const rows = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
   return rows[0] || null;
 }
 
 export async function findUserBySession(req: any) {
+  await ensureDatabase();
   const session = readUserSession(req);
   if (!session?.userId) return null;
   const rows = await db.select().from(usersTable).where(eq(usersTable.id, session.userId)).limit(1);

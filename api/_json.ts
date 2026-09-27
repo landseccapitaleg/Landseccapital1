@@ -1,7 +1,7 @@
 // @ts-nocheck
 import crypto from "node:crypto";
 import { and, desc, eq } from "drizzle-orm";
-import { db, depositsTable, kycRequestsTable, siteSettingsTable, transactionsTable, usersTable, withdrawalsTable } from "../lib/db/src";
+import { db, depositsTable, ensureDatabase, kycRequestsTable, siteSettingsTable, transactionsTable, usersTable, withdrawalsTable } from "../lib/db/src";
 import { findUserBySession, publicUser } from "../lib/db/src/user-auth";
 import { readSession } from "./admin/_auth";
 
@@ -28,6 +28,7 @@ export function adminOr401(req: any, res: any) {
   catch { fail(res, 503, "Admin authentication is not configured"); return null; }
 }
 export async function userCollections(userId: string) {
+  await ensureDatabase();
   const [transactions, deposits, withdrawals, kyc] = await Promise.all([
     db.select().from(transactionsTable).where(eq(transactionsTable.userId, userId)).orderBy(desc(transactionsTable.createdAt)),
     db.select().from(depositsTable).where(eq(depositsTable.userId, userId)).orderBy(desc(depositsTable.createdAt)),
@@ -36,4 +37,4 @@ export async function userCollections(userId: string) {
   ]);
   return { transactions, deposits, withdrawals, kyc };
 }
-export { and, db, depositsTable, kycRequestsTable, publicUser, siteSettingsTable, transactionsTable, usersTable, withdrawalsTable };
+export { and, db, depositsTable, ensureDatabase, kycRequestsTable, publicUser, siteSettingsTable, transactionsTable, usersTable, withdrawalsTable };

@@ -37,14 +37,27 @@ In your Vercel project dashboard → **Settings → Environment Variables**, add
 | `ADMIN_EMAIL` | Yes | Admin login email |
 | `ADMIN_PASSWORD` | Yes | Admin login password |
 | `SESSION_SECRET` | Yes | Random secret for session signing |
-| `DATABASE_URL` | Yes | PostgreSQL connection string for user accounts |
+| `DATABASE_URL` | Yes | New Neon pooled PostgreSQL connection string |
 
 > **Getting a Gmail App Password:**
 > 1. Enable 2-Step Verification on your Gmail account
 > 2. Go to [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)
 > 3. Create a new app password — copy the 16-character code
 
-### Step 4 — Redeploy
+### Step 4 — Automatic Database Setup
+
+No SQL commands or migration commands are required in Neon.
+
+When the API receives its first request, it automatically creates the
+`users`, `deposits`, `withdrawals`, `kyc_requests`, `transactions`, and
+`site_settings` tables plus their indexes. The setup is idempotent and runs
+inside a transaction, so it is safe for a completely empty Neon database.
+
+Only the new Neon pooled connection string needs to be assigned to
+`DATABASE_URL`. Remove or replace any old `DATABASE_URL` values in the Vercel
+Production and Preview environments.
+
+### Step 5 — Redeploy
 
 After adding env vars, click **Redeploy** in the Vercel dashboard to apply them.
 
@@ -96,4 +109,4 @@ api/
 
 - User registration and authentication use PostgreSQL, scrypt password hashes, and HTTP-only signed cookies
 - Emails are sent via Gmail SMTP through the serverless API functions
-- The Replit development database is provisioned already; Vercel needs its own hosted PostgreSQL `DATABASE_URL`
+- Vercel needs its own hosted PostgreSQL `DATABASE_URL`; the application creates the schema automatically on first use

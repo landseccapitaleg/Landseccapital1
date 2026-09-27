@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { body, fail, id, adminOr401, db, depositsTable, withdrawalsTable, kycRequestsTable, siteSettingsTable, usersTable, transactionsTable, publicUser, and } from "../_json";
+import { body, fail, id, adminOr401, db, depositsTable, ensureDatabase, withdrawalsTable, kycRequestsTable, siteSettingsTable, usersTable, transactionsTable, publicUser, and } from "../_json";
 import { desc, eq, sql } from "drizzle-orm";
 
 function exposed(row: any, user: any) {
@@ -22,6 +22,7 @@ export default async function handler(req: any, res: any) {
   if (!["GET", "POST"].includes(req.method)) return fail(res, 405, "Method not allowed");
   const admin = adminOr401(req, res); if (!admin) return;
   try {
+    await ensureDatabase();
     if (req.method === "GET") return res.status(200).json(await collections());
     const b = body(req), action = String(b.action || ""), [kind, operation] = action.split(".");
     const table = kind === "deposit" ? depositsTable : kind === "withdrawal" ? withdrawalsTable : kind === "kyc" ? kycRequestsTable : null;
