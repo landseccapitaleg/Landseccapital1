@@ -4,6 +4,11 @@
   "buildCommand": "pnpm build:frontend",
   "outputDirectory": "artifacts/landvest/dist/public",
   "rewrites": [
+    { "source": "/api/healthz", "destination": "/api/user-auth?route=health" },
+    { "source": "/api/user/login", "destination": "/api/user-auth?route=login" },
+    { "source": "/api/user/logout", "destination": "/api/user-auth?route=logout" },
+    { "source": "/api/user/register", "destination": "/api/user-auth?route=register" },
+    { "source": "/api/user/session", "destination": "/api/user-auth?route=session" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "headers": [

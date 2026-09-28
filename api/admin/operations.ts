@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { body, fail, id, adminOr401, db, depositsTable, ensureDatabase, withdrawalsTable, kycRequestsTable, siteSettingsTable, usersTable, transactionsTable, publicUser, and } from "../_json";
+import { body, fail, id, adminOr401, db, depositsTable, ensureDatabase, withdrawalsTable, kycRequestsTable, siteSettingsTable, usersTable, transactionsTable, publicUser, and } from "../../lib/vercel/json";
 import { desc, eq, sql } from "drizzle-orm";
 
 function exposed(row: any, user: any) {

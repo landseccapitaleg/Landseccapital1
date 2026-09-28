@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { getAdminEmail, readSession } from "./_auth";
+import { getAdminEmail, readSession } from "../../lib/vercel/admin-auth";
 
 export default function handler(req: any, res: any) {
   if (req.method !== "GET") {

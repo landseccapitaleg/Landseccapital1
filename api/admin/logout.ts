@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { clearSessionCookie } from "./_auth";
+import { clearSessionCookie } from "../../lib/vercel/admin-auth";
 
 export default function handler(req: any, res: any) {
   if (req.method !== "POST") {

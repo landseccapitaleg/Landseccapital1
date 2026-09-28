@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { createSession, setSessionCookie, verifyCredentials } from "./_auth";
+import { createSession, setSessionCookie, verifyCredentials } from "../../lib/vercel/admin-auth";
 
 export default async function handler(req: any, res: any) {
   if (req.method !== "POST") {

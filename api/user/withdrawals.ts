@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { body, fail, id, amount, db, withdrawalsTable, transactionsTable, userOr401, userCollections, publicUser, usersTable } from "../_json";
+import { body, fail, id, amount, db, withdrawalsTable, transactionsTable, userOr401, userCollections, publicUser, usersTable } from "../../lib/vercel/json";
 import { and, eq, sql } from "drizzle-orm";
 export default async function handler(req: any, res: any) {
   if (!["GET", "POST"].includes(req.method)) return fail(res, 405, "Method not allowed");

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { body, fail, id, amount, db, depositsTable, transactionsTable, userOr401, userCollections, publicUser } from "../_json";
+import { body, fail, id, amount, db, depositsTable, transactionsTable, userOr401, userCollections, publicUser } from "../../lib/vercel/json";
 export default async function handler(req: any, res: any) {
   if (!["GET", "POST"].includes(req.method)) return fail(res, 405, "Method not allowed");
   try {

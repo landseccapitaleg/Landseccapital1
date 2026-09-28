@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { readSession } from "./_auth";
+import { readSession } from "../../lib/vercel/admin-auth";
 
 export default function handler(req: any, res: any) {
   if (req.method !== "POST") {
