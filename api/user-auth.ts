@@ -1,18 +1,5 @@
 // @ts-nocheck
 import crypto from "node:crypto";
-import {
-  createUserSession,
-  findUserByEmail,
-  findUserBySession,
-  hashPassword,
-  publicUser,
-  setUserSessionCookie,
-  verifyPassword,
-  clearUserSessionCookie,
-  db,
-  usersTable,
-} from "../lib/db/src/user-auth";
-import { ensureDatabase } from "../lib/db/src";
 
 const PLAN_TERM_DAYS: Record<string, number> = {
   "Foundation Plan": 365,
@@ -36,16 +23,35 @@ function maturityDate(start: string, plan: string) {
   return date.toISOString();
 }
 
+function databaseFailureCode(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error || "");
+  if (/ERR_MODULE_NOT_FOUND|Cannot find (?:module|package)/i.test(message)) {
+    return "database_module_missing";
+  }
+  if (/invalid (?:postgresql? )?connection string|invalid url/i.test(message)) {
+    return "database_url_invalid";
+  }
+  if (/ENOTFOUND|ECONNREFUSED|ETIMEDOUT|EHOSTUNREACH|password authentication failed|no pg_hba\.conf/i.test(message)) {
+    return "database_connection_failed";
+  }
+  return "database_initialization_failed";
+}
+
 export default async function handler(req: any, res: any) {
   const route = readRoute(req);
 
   if (route === "health") {
     try {
+      const { ensureDatabase } = await import("../lib/db/src");
       await ensureDatabase();
       res.status(200).json({ status: "ok", database: "ready" });
     } catch (error) {
       console.error("Health check database initialization failed", error);
-      res.status(503).json({ status: "error", database: "unavailable" });
+      res.status(503).json({
+        status: "error",
+        database: "unavailable",
+        code: databaseFailureCode(error),
+      });
     }
     return;
   }
@@ -55,7 +61,7 @@ export default async function handler(req: any, res: any) {
       res.status(405).json({ error: "Method not allowed" });
       return;
     }
-    clearUserSessionCookie(res);
+    res.setHeader("Set-Cookie", "landsec_user_session=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax");
     res.status(200).json({ ok: true });
     return;
   }
@@ -66,6 +72,7 @@ export default async function handler(req: any, res: any) {
       return;
     }
     try {
+      const { findUserBySession, publicUser } = await import("../lib/db/src/user-auth");
       const user = await findUserBySession(req);
       if (!user) {
         res.status(401).json({ error: "Not authenticated" });
@@ -88,6 +95,8 @@ export default async function handler(req: any, res: any) {
       const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body || {};
       const email = String(body.email || "").trim().toLowerCase();
       const password = String(body.password || "");
+      const { findUserByEmail, verifyPassword, createUserSession, publicUser, setUserSessionCookie } =
+        await import("../lib/db/src/user-auth");
       const user = await findUserByEmail(email);
       if (!user || !(await verifyPassword(password, user.passwordHash))) {
         res.status(401).json({ error: "Invalid email or password" });
@@ -121,6 +130,15 @@ export default async function handler(req: any, res: any) {
         res.status(400).json({ error: "Password must be at least 8 characters" });
         return;
       }
+      const {
+        findUserByEmail,
+        hashPassword,
+        createUserSession,
+        publicUser,
+        setUserSessionCookie,
+        db,
+        usersTable,
+      } = await import("../lib/db/src/user-auth");
       if (await findUserByEmail(email)) {
         res.status(409).json({ error: "An account with this email already exists" });
         return;
