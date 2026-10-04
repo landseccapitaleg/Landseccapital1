@@ -1,5 +1,7 @@
 // @ts-nocheck
 import crypto from "node:crypto";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 const PLAN_TERM_DAYS: Record<string, number> = {
   "Foundation Plan": 365,
@@ -9,6 +11,16 @@ const PLAN_TERM_DAYS: Record<string, number> = {
   "Institutional Plan": 1460,
   "Heritage Plan": 1460,
 };
+
+const nativeImport = new Function("specifier", "return import(specifier)") as (
+  specifier: string,
+) => Promise<any>;
+
+function importDatabaseModule(name: "index" | "user-auth") {
+  const extension = process.env.VERCEL ? "js" : "ts";
+  const modulePath = resolve(__dirname, `../lib/db/src/${name}.${extension}`);
+  return nativeImport(pathToFileURL(modulePath).href);
+}
 
 function readRoute(req: any) {
   const queryRoute = req.query?.route;
@@ -42,7 +54,7 @@ export default async function handler(req: any, res: any) {
 
   if (route === "health") {
     try {
-      const { ensureDatabase } = await import("../lib/db/src");
+      const { ensureDatabase } = await importDatabaseModule("index");
       await ensureDatabase();
       res.status(200).json({ status: "ok", database: "ready" });
     } catch (error) {
@@ -72,7 +84,7 @@ export default async function handler(req: any, res: any) {
       return;
     }
     try {
-      const { findUserBySession, publicUser } = await import("../lib/db/src/user-auth");
+      const { findUserBySession, publicUser } = await importDatabaseModule("user-auth");
       const user = await findUserBySession(req);
       if (!user) {
         res.status(401).json({ error: "Not authenticated" });
@@ -96,7 +108,7 @@ export default async function handler(req: any, res: any) {
       const email = String(body.email || "").trim().toLowerCase();
       const password = String(body.password || "");
       const { findUserByEmail, verifyPassword, createUserSession, publicUser, setUserSessionCookie } =
-        await import("../lib/db/src/user-auth");
+        await importDatabaseModule("user-auth");
       const user = await findUserByEmail(email);
       if (!user || !(await verifyPassword(password, user.passwordHash))) {
         res.status(401).json({ error: "Invalid email or password" });
@@ -138,7 +150,7 @@ export default async function handler(req: any, res: any) {
         setUserSessionCookie,
         db,
         usersTable,
-      } = await import("../lib/db/src/user-auth");
+      } = await importDatabaseModule("user-auth");
       if (await findUserByEmail(email)) {
         res.status(409).json({ error: "An account with this email already exists" });
         return;
