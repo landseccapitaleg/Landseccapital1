@@ -3,11 +3,6 @@
   "installCommand": "pnpm install",
   "buildCommand": "pnpm build:frontend",
   "outputDirectory": "artifacts/landvest/dist/public",
-  "functions": {
-    "api/user-auth.ts": {
-      "includeFiles": "lib/db/**"
-    }
-  },
   "rewrites": [
     { "source": "/api/healthz", "destination": "/api/user-auth?route=health" },
     { "source": "/api/user/login", "destination": "/api/user-auth?route=login" },
